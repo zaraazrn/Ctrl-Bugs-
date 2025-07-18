@@ -314,23 +314,49 @@ class PopupManager {
     this.elements.neutralCount.textContent = neutral;
   }
 
-  showSuspiciousReviews() {
-    console.log('Showing suspicious reviews:', this.analysisData?.suspiciousReviews);
-    
-    if (!this.analysisData || !this.analysisData.suspiciousReviews || this.analysisData.suspiciousReviews.length === 0) {
-      console.error('No suspicious reviews data available');
-      return;
-    }
-    
-    this.elements.content.style.display = 'none';
-    this.elements.reviewsSection.style.display = 'block';
-    if (this.elements.summarySection) {
-      this.elements.summarySection.style.display = 'none';
-    }
-    
-    this.elements.reviewsTitle.textContent = `Suspicious Reviews (${this.analysisData.suspiciousReviews.length})`;
-    this.renderSuspiciousReviews(this.analysisData.suspiciousReviews);
+
+// Updated showSuspiciousReviews method with better debugging
+showSuspiciousReviews() {
+  console.log('=== SHOWING SUSPICIOUS REVIEWS ===');
+  console.log('Analysis data:', this.analysisData);
+  console.log('Suspicious reviews data:', this.analysisData?.suspiciousReviews);
+  
+  if (!this.analysisData) {
+    console.error('No analysis data available');
+    alert('No analysis data available. Please refresh the analysis.');
+    return;
   }
+  
+  if (!this.analysisData.suspiciousReviews) {
+    console.error('No suspicious reviews property in analysis data');
+    console.log('Available properties:', Object.keys(this.analysisData));
+    alert('No suspicious reviews data found. The analysis might not be complete.');
+    return;
+  }
+  
+  if (this.analysisData.suspiciousReviews.length === 0) {
+    console.warn('Suspicious reviews array is empty');
+    alert('No suspicious reviews found in the analysis.');
+    return;
+  }
+  
+  console.log(`Found ${this.analysisData.suspiciousReviews.length} suspicious reviews`);
+  
+  // Hide other sections
+  this.elements.content.style.display = 'none';
+  this.elements.reviewsSection.style.display = 'block';
+  if (this.elements.summarySection) {
+    this.elements.summarySection.style.display = 'none';
+  }
+  
+  // Update title
+  this.elements.reviewsTitle.textContent = `Suspicious Reviews (${this.analysisData.suspiciousReviews.length})`;
+  
+  // Render the reviews
+  this.renderSuspiciousReviews(this.analysisData.suspiciousReviews);
+  
+  console.log('=== SUSPICIOUS REVIEWS DISPLAY COMPLETE ===');
+}
 
   showAuthenticSummary() {
     console.log('Showing authentic summary:', this.analysisData?.authenticReviews);
@@ -355,90 +381,262 @@ class PopupManager {
     }
   }
 
-  renderSuspiciousReviews(reviews) {
-    console.log('Rendering suspicious reviews:', reviews.length);
-    const container = this.elements.reviewsList;
-    container.innerHTML = '';
+  // Updated renderSuspiciousReviews method with better error handling and debugging
+renderSuspiciousReviews(reviews) {
+  console.log('Rendering suspicious reviews:', reviews);
+  console.log('Reviews length:', reviews ? reviews.length : 'null/undefined');
+  
+  const container = this.elements.reviewsList;
+  if (!container) {
+    console.error('Reviews list container not found');
+    return;
+  }
+  
+  container.innerHTML = '';
 
-    if (!reviews || reviews.length === 0) {
-      container.innerHTML = '<p class="no-reviews">No suspicious reviews found</p>';
-      return;
-    }
-
-    reviews.forEach((review, index) => {
-      const reviewElement = document.createElement('div');
-      reviewElement.className = 'review-item suspicious';
-      
-      const flagsHtml = review.flags && review.flags.length > 0 
-        ? `<div class="review-flags">
-             ${review.flags.map(flag => `<span class="flag-badge">${flag}</span>`).join('')}
-           </div>`
-        : '';
-      
-      reviewElement.innerHTML = `
-        <div class="review-header">
-          <span class="review-author">${review.author || 'Anonymous'}</span>
-          <span class="review-rating">★ ${review.rating || 'N/A'}</span>
-        </div>
-        ${flagsHtml}
-        <div class="review-text">${review.text || 'No review text available'}</div>
-        <div class="review-meta">
-          <span class="suspicious-score">Suspicious Score: ${Math.round((review.suspiciousScore || 0) * 100)}%</span>
-          <span class="review-date">${review.date || 'Unknown date'}</span>
-        </div>
-      `;
-      
-      container.appendChild(reviewElement);
-    });
+  if (!reviews || reviews.length === 0) {
+    console.warn('No suspicious reviews to display');
+    container.innerHTML = '<p class="no-reviews">No suspicious reviews found</p>';
+    return;
   }
 
-  renderAuthenticSummary(reviews) {
+  // Sort by suspicious score (highest first) before limiting to 10
+  const sortedReviews = reviews.sort((a, b) => (b.suspiciousScore || 0) - (a.suspiciousScore || 0));
+  const limitedReviews = sortedReviews.slice(0, 10);
+  const totalReviews = reviews.length;
+  
+  console.log(`Processing ${limitedReviews.length} suspicious reviews (showing top 10 of ${totalReviews})`);
+
+  // Add a header if there are more than 10 reviews
+  if (totalReviews > 10) {
+    const headerElement = document.createElement('div');
+    headerElement.className = 'reviews-header';
+    headerElement.innerHTML = `
+      <p class="reviews-limit-notice">
+        <strong>Showing top 10 most suspicious reviews</strong> (${totalReviews} total found)
+      </p>
+    `;
+    container.appendChild(headerElement);
+  }
+
+  limitedReviews.forEach((review, index) => {
+    console.log(`Processing review ${index + 1}:`, review);
+    
+    const reviewElement = document.createElement('div');
+    reviewElement.className = 'review-item suspicious';
+    
+    // Handle missing or undefined properties with fallbacks
+    const author = review.author || review.reviewer || 'Anonymous';
+    const rating = review.rating || review.stars || 'N/A';
+    const text = review.text || review.content || review.review || 'No review text available';
+    const date = review.date || review.reviewDate || review.timestamp || 'Unknown date';
+    const suspiciousScore = review.suspiciousScore || review.score || review.confidence || 0;
+    const flags = review.flags || review.reasons || review.warnings || [];
+    
+    // Create flags HTML
+    let flagsHtml = '';
+    if (flags && flags.length > 0) {
+      flagsHtml = `
+        <div class="review-flags">
+          ${flags.map(flag => `<span class="flag-badge">${flag}</span>`).join('')}
+        </div>
+      `;
+    }
+    
+    // Create the review HTML
+    reviewElement.innerHTML = `
+      <div class="review-header">
+        <span class="review-author">${this.escapeHtml(author)}</span>
+        <span class="review-rating">★ ${rating}</span>
+      </div>
+      ${flagsHtml}
+      <div class="review-text">${this.escapeHtml(text)}</div>
+      <div class="review-meta">
+        <span class="suspicious-score">Suspicious Score: ${Math.round(suspiciousScore * 100)}%</span>
+        <span class="review-date">${this.escapeHtml(date)}</span>
+      </div>
+    `;
+    
+    container.appendChild(reviewElement);
+    console.log(`Added review ${index + 1} to container`);
+  });
+  
+  console.log(`Finished rendering ${limitedReviews.length} suspicious reviews`);
+}
+
+// Helper method to escape HTML to prevent XSS
+escapeHtml(text) {
+  if (typeof text !== 'string') {
+    return String(text);
+  }
+  
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+
+// Alternative method to check data structure
+debugAnalysisData() {
+  console.log('=== DEBUGGING ANALYSIS DATA ===');
+  console.log('Full analysis data:', this.analysisData);
+  
+  if (this.analysisData) {
+    console.log('Analysis data keys:', Object.keys(this.analysisData));
+    
+    // Check different possible property names for suspicious reviews
+    const possibleKeys = [
+      'suspiciousReviews',
+      'suspicious_reviews', 
+      'flaggedReviews',
+      'fakeReviews',
+      'artificialReviews'
+    ];
+    
+    possibleKeys.forEach(key => {
+      if (this.analysisData.hasOwnProperty(key)) {
+        console.log(`Found ${key}:`, this.analysisData[key]);
+      }
+    });
+  }
+  
+  console.log('=== END DEBUG ===');
+}
+
+// Enhanced button click handler for suspicious reviews
+handleSuspiciousButtonClick() {
+  console.log('=== SUSPICIOUS BUTTON CLICKED ===');
+  
+  // First, debug the data
+  this.debugAnalysisData();
+  
+  // Check if button should be enabled
+  const hasData = this.analysisData && 
+                  this.analysisData.suspiciousReviews && 
+                  this.analysisData.suspiciousReviews.length > 0;
+  
+  console.log('Has suspicious reviews data:', hasData);
+  console.log('Button disabled state:', this.elements.showSuspiciousBtn.disabled);
+  
+  if (!hasData) {
+    alert('No suspicious reviews found to display');
+    return;
+  }
+  
+  // Proceed with showing reviews
+  this.showSuspiciousReviews();
+}
+
+// Method to manually trigger debugging from console
+triggerDebug() {
+  console.log('=== MANUAL DEBUG TRIGGER ===');
+  console.log('Current view:', this.currentView);
+  console.log('Elements check:', {
+    showSuspiciousBtn: !!this.elements.showSuspiciousBtn,
+    reviewsSection: !!this.elements.reviewsSection,
+    reviewsList: !!this.elements.reviewsList,
+    reviewsTitle: !!this.elements.reviewsTitle
+  });
+  
+  this.debugAnalysisData();
+  
+  // Check if reviews section is visible
+  if (this.elements.reviewsSection) {
+    console.log('Reviews section display:', this.elements.reviewsSection.style.display);
+    console.log('Reviews section HTML:', this.elements.reviewsSection.innerHTML);
+  }
+}
+renderAuthenticSummary(reviews) {
     console.log('Rendering authentic summary for:', reviews.length, 'reviews');
     const container = this.elements.summaryList;
     container.innerHTML = '';
 
     if (!reviews || reviews.length === 0) {
-      container.innerHTML = '<p class="no-reviews">No authentic reviews to analyze</p>';
+      container.innerHTML = `
+        <div class="no-reviews">
+          <div class="no-reviews-icon">📝</div>
+          <h4>No Authentic Reviews</h4>
+          <p>No authentic reviews found to analyze</p>
+        </div>
+      `;
       return;
     }
 
     const summary = this.generateAuthenticSummary(reviews);
     
     const summaryHtml = `
-      <div class="summary-stats">
-        <h4>📊 Overview</h4>
-        <ul>
-          <li>Total authentic reviews: ${reviews.length}</li>
-          <li>Positive reviews: ${summary.sentimentCounts.positive}</li>
-          <li>Negative reviews: ${summary.sentimentCounts.negative}</li>
-          <li>Neutral reviews: ${summary.sentimentCounts.neutral}</li>
-        </ul>
+      <div class="summary-overview-card">
+        <div class="summary-card-header">
+          <div class="summary-icon">📊</div>
+          <h4>Overview</h4>
+        </div>
+        <div class="summary-stats-grid">
+          <div class="summary-stat">
+            <span class="stat-number">${reviews.length}</span>
+            <span class="stat-label">Total Reviews</span>
+          </div>
+          <div class="summary-stat positive">
+            <span class="stat-number">${summary.sentimentCounts.positive}</span>
+            <span class="stat-label">Positive</span>
+          </div>
+          <div class="summary-stat negative">
+            <span class="stat-number">${summary.sentimentCounts.negative}</span>
+            <span class="stat-label">Negative</span>
+          </div>
+          <div class="summary-stat neutral">
+            <span class="stat-number">${summary.sentimentCounts.neutral}</span>
+            <span class="stat-label">Neutral</span>
+          </div>
+        </div>
       </div>
       
-      <div class="summary-insights">
-        <h4>💡 Key Insights</h4>
-        <ul>
-          ${summary.insights.map(insight => `<li>${insight}</li>`).join('')}
-        </ul>
+      <div class="summary-insights-card">
+        <div class="summary-card-header">
+          <div class="summary-icon">💡</div>
+          <h4>Key Insights</h4>
+        </div>
+        <div class="insights-list">
+          ${summary.insights.map(insight => `
+            <div class="insight-item">
+              <div class="insight-bullet"></div>
+              <span>${insight}</span>
+            </div>
+          `).join('')}
+        </div>
       </div>
       
-      <div class="summary-themes">
-        <h4>🏷️ Common Themes</h4>
-        <ul>
-          ${summary.commonThemes.map(theme => `<li>${theme}</li>`).join('')}
-        </ul>
+      <div class="summary-themes-card">
+        <div class="summary-card-header">
+          <div class="summary-icon">🏷️</div>
+          <h4>Common Themes</h4>
+        </div>
+        <div class="themes-container">
+          ${summary.commonThemes.map(theme => `
+            <div class="theme-tag">${theme}</div>
+          `).join('')}
+        </div>
       </div>
       
-      <div class="summary-highlights">
-        <h4>⭐ Review Highlights</h4>
+      <div class="summary-highlights-card">
+        <div class="summary-card-header">
+          <div class="summary-icon">⭐</div>
+          <h4>Review Highlights</h4>
+        </div>
         <div class="highlight-reviews">
           ${summary.highlightReviews.map(review => `
             <div class="highlight-review">
               <div class="highlight-header">
-                <span class="sentiment-badge ${review.sentiment}">${review.sentiment}</span>
-                <span class="rating">★ ${review.rating}</span>
+                <div class="sentiment-badge ${review.sentiment}">
+                  ${review.sentiment.charAt(0).toUpperCase() + review.sentiment.slice(1)}
+                </div>
+                <div class="rating-display">
+                  <span class="rating-stars">${'★'.repeat(review.rating)}</span>
+                  <span class="rating-number">${review.rating}</span>
+                </div>
               </div>
-              <p>"${review.text.substring(0, 150)}${review.text.length > 150 ? '...' : ''}"</p>
+              <div class="highlight-text">
+                "${review.text.substring(0, 150)}${review.text.length > 150 ? '...' : ''}"
+              </div>
             </div>
           `).join('')}
         </div>
@@ -454,33 +652,60 @@ class PopupManager {
     container.innerHTML = '';
 
     if (!reviews || reviews.length === 0) {
-      container.innerHTML = '<p class="no-reviews">No authentic reviews to analyze</p>';
+      container.innerHTML = `
+        <div class="no-reviews">
+          <div class="no-reviews-icon">📝</div>
+          <h4>No Authentic Reviews</h4>
+          <p>No authentic reviews found to analyze</p>
+        </div>
+      `;
       return;
     }
 
     const summary = this.generateAuthenticSummary(reviews);
     
     const summaryElement = document.createElement('div');
-    summaryElement.className = 'authentic-summary';
+    summaryElement.className = 'authentic-summary-compact';
     summaryElement.innerHTML = `
-      <div class="summary-section">
-        <h4>📊 Overview</h4>
-        <p>Total authentic reviews: ${reviews.length}</p>
-        <p>Positive: ${summary.sentimentCounts.positive} | Negative: ${summary.sentimentCounts.negative} | Neutral: ${summary.sentimentCounts.neutral}</p>
+      <div class="summary-compact-header">
+        <div class="summary-icon">📊</div>
+        <h4>Authentic Review Analysis</h4>
       </div>
       
-      <div class="summary-section">
-        <h4>💡 Key Insights</h4>
-        <ul>
-          ${summary.insights.map(insight => `<li>${insight}</li>`).join('')}
-        </ul>
+      <div class="summary-compact-stats">
+        <div class="compact-stat-row">
+          <span class="compact-label">Total Reviews:</span>
+          <span class="compact-value">${reviews.length}</span>
+        </div>
+        <div class="compact-stat-row">
+          <span class="compact-label">Sentiment:</span>
+          <div class="compact-sentiment">
+            <span class="sentiment-chip positive">${summary.sentimentCounts.positive} Positive</span>
+            <span class="sentiment-chip negative">${summary.sentimentCounts.negative} Negative</span>
+            <span class="sentiment-chip neutral">${summary.sentimentCounts.neutral} Neutral</span>
+          </div>
+        </div>
       </div>
       
-      <div class="summary-section">
-        <h4>🏷️ Common Themes</h4>
-        <ul>
-          ${summary.commonThemes.map(theme => `<li>${theme}</li>`).join('')}
-        </ul>
+      <div class="summary-compact-section">
+        <h5>💡 Key Insights</h5>
+        <div class="compact-insights">
+          ${summary.insights.map(insight => `
+            <div class="compact-insight">
+              <div class="insight-bullet"></div>
+              <span>${insight}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      
+      <div class="summary-compact-section">
+        <h5>🏷️ Common Themes</h5>
+        <div class="compact-themes">
+          ${summary.commonThemes.map(theme => `
+            <div class="compact-theme-tag">${theme}</div>
+          `).join('')}
+        </div>
       </div>
     `;
     
