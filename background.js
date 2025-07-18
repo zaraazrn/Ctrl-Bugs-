@@ -29,6 +29,7 @@ class ReviewAnalyzer {
     const confidence = this.calculateConfidence(review);
     
     return {
+      id: review.id,
       text: review.text,
       author: review.author,
       date: review.date,

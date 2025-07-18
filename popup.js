@@ -1,14 +1,18 @@
 // Popup script for AI Review Detector
 class PopupManager {
   constructor() {
+    console.log('PopupManager constructor called');
     this.currentView = 'main';
     this.analysisData = null;
     this.initializeElements();
     this.bindEvents();
     this.loadAnalysis();
+    console.log('PopupManager initialization complete');
   }
 
   initializeElements() {
+    console.log('Initializing popup elements...');
+    
     this.elements = {
       loading: document.getElementById('loading'),
       content: document.getElementById('content'),
@@ -46,30 +50,64 @@ class PopupManager {
       reviewsSection: document.getElementById('reviewsSection'),
       reviewsTitle: document.getElementById('reviewsTitle'),
       reviewsList: document.getElementById('reviewsList'),
-      backBtn: document.getElementById('backBtn')
+      backBtn: document.getElementById('backBtn'),
+      
+      // Summary section
+      summarySection: document.getElementById('summarySection'),
+      summaryTitle: document.getElementById('summaryTitle'),
+      summaryList: document.getElementById('summaryList'),
+      summaryBackBtn: document.getElementById('summaryBackBtn')
     };
+    
+    // Log which elements were found
+    console.log('Elements found:', {
+      showSuspiciousBtn: !!this.elements.showSuspiciousBtn,
+      showAuthenticBtn: !!this.elements.showAuthenticBtn,
+      backBtn: !!this.elements.backBtn,
+      summarySection: !!this.elements.summarySection,
+      summaryBackBtn: !!this.elements.summaryBackBtn
+    });
   }
 
   bindEvents() {
+    console.log('Binding events to buttons...');
+    
     this.elements.closeBtn.addEventListener('click', () => {
+      console.log('Close button clicked');
       window.close();
     });
 
     this.elements.retryBtn.addEventListener('click', () => {
+      console.log('Retry button clicked');
       this.refreshAnalysis();
     });
 
+    this.elements.backBtn.addEventListener('click', () => {
+      console.log('Back button clicked');
+      this.showMainView();
+    });
+
+    // Summary back button
+    if (this.elements.summaryBackBtn) {
+      this.elements.summaryBackBtn.addEventListener('click', () => {
+        console.log('Summary back button clicked');
+        this.showMainView();
+      });
+    }
+
+    // Suspicious reviews button
     this.elements.showSuspiciousBtn.addEventListener('click', () => {
+      console.log('Suspicious button clicked');
       this.showSuspiciousReviews();
     });
 
+    // Authentic summary button
     this.elements.showAuthenticBtn.addEventListener('click', () => {
+      console.log('Authentic button clicked');
       this.showAuthenticSummary();
     });
-
-    this.elements.backBtn.addEventListener('click', () => {
-      this.showMainView();
-    });
+    
+    console.log('All event listeners bound successfully');
   }
 
   async loadAnalysis() {
@@ -175,12 +213,20 @@ class PopupManager {
     this.elements.loading.style.display = 'block';
     this.elements.content.style.display = 'none';
     this.elements.error.style.display = 'none';
+    this.elements.reviewsSection.style.display = 'none';
+    if (this.elements.summarySection) {
+      this.elements.summarySection.style.display = 'none';
+    }
   }
 
   showError(message = 'No reviews found on this page') {
     this.elements.loading.style.display = 'none';
     this.elements.content.style.display = 'none';
     this.elements.error.style.display = 'block';
+    this.elements.reviewsSection.style.display = 'none';
+    if (this.elements.summarySection) {
+      this.elements.summarySection.style.display = 'none';
+    }
     
     // Update error message if provided
     const errorText = document.getElementById('errorMessage');
@@ -190,9 +236,15 @@ class PopupManager {
   }
 
   displayAnalysis() {
+    console.log('Displaying analysis data:', this.analysisData);
+    
     this.elements.loading.style.display = 'none';
     this.elements.error.style.display = 'none';
     this.elements.content.style.display = 'block';
+    this.elements.reviewsSection.style.display = 'none';
+    if (this.elements.summarySection) {
+      this.elements.summarySection.style.display = 'none';
+    }
 
     const data = this.analysisData;
 
@@ -212,9 +264,9 @@ class PopupManager {
     this.elements.confidenceValue.textContent = data.overallConfidence + '%';
     this.elements.confidenceFill.style.width = data.overallConfidence + '%';
 
-    // Update button states
-    this.elements.showSuspiciousBtn.disabled = data.suspicious === 0;
-    this.elements.showAuthenticBtn.disabled = data.authentic === 0;
+    // Enable buttons if we have data
+    this.elements.showSuspiciousBtn.disabled = !data.suspiciousReviews || data.suspiciousReviews.length === 0;
+    this.elements.showAuthenticBtn.disabled = !data.authenticReviews || data.authenticReviews.length === 0;
   }
 
   updateRecommendation(recommendation) {
@@ -230,17 +282,17 @@ class PopupManager {
       case 'recommended':
         card.classList.add('recommended');
         icon.textContent = '✓';
-        title.textContent = 'Recommended';
+        title.textContent = 'YES BUY IT!!';
         break;
       case 'not_recommended':
         card.classList.add('not-recommended');
         icon.textContent = '✗';
-        title.textContent = 'Not Recommended';
+        title.textContent = 'Nahh save your money..';
         break;
       default:
         card.classList.add('caution');
         icon.textContent = '⚠';
-        title.textContent = 'Proceed with Caution';
+        title.textContent = 'Uhh.. up to you..';
     }
 
     reason.textContent = recommendation.reason;
@@ -263,42 +315,76 @@ class PopupManager {
   }
 
   showSuspiciousReviews() {
+    console.log('Showing suspicious reviews:', this.analysisData?.suspiciousReviews);
+    
+    if (!this.analysisData || !this.analysisData.suspiciousReviews || this.analysisData.suspiciousReviews.length === 0) {
+      console.error('No suspicious reviews data available');
+      return;
+    }
+    
     this.elements.content.style.display = 'none';
     this.elements.reviewsSection.style.display = 'block';
-    this.elements.reviewsTitle.textContent = 'Suspicious Reviews';
+    if (this.elements.summarySection) {
+      this.elements.summarySection.style.display = 'none';
+    }
     
-    this.renderReviews(this.analysisData.suspiciousReviews, true);
+    this.elements.reviewsTitle.textContent = `Suspicious Reviews (${this.analysisData.suspiciousReviews.length})`;
+    this.renderSuspiciousReviews(this.analysisData.suspiciousReviews);
   }
 
   showAuthenticSummary() {
-    this.elements.content.style.display = 'none';
-    this.elements.reviewsSection.style.display = 'block';
-    this.elements.reviewsTitle.textContent = 'Authentic Reviews Summary';
+    console.log('Showing authentic summary:', this.analysisData?.authenticReviews);
     
-    this.renderAuthenticSummary(this.analysisData.authenticReviews);
+    if (!this.analysisData || !this.analysisData.authenticReviews || this.analysisData.authenticReviews.length === 0) {
+      console.error('No authentic reviews data available');
+      return;
+    }
+    
+    this.elements.content.style.display = 'none';
+    this.elements.reviewsSection.style.display = 'none';
+    
+    if (this.elements.summarySection) {
+      this.elements.summarySection.style.display = 'block';
+      this.elements.summaryTitle.textContent = 'Authentic Reviews Summary';
+      this.renderAuthenticSummary(this.analysisData.authenticReviews);
+    } else {
+      // Fallback to reviews section if summary section doesn't exist
+      this.elements.reviewsSection.style.display = 'block';
+      this.elements.reviewsTitle.textContent = 'Authentic Reviews Summary';
+      this.renderAuthenticSummaryInReviews(this.analysisData.authenticReviews);
+    }
   }
 
-  renderReviews(reviews, isSuspicious = false) {
+  renderSuspiciousReviews(reviews) {
+    console.log('Rendering suspicious reviews:', reviews.length);
     const container = this.elements.reviewsList;
     container.innerHTML = '';
 
-    reviews.forEach(review => {
+    if (!reviews || reviews.length === 0) {
+      container.innerHTML = '<p class="no-reviews">No suspicious reviews found</p>';
+      return;
+    }
+
+    reviews.forEach((review, index) => {
       const reviewElement = document.createElement('div');
-      reviewElement.className = `review-item ${isSuspicious ? 'suspicious' : ''}`;
+      reviewElement.className = 'review-item suspicious';
+      
+      const flagsHtml = review.flags && review.flags.length > 0 
+        ? `<div class="review-flags">
+             ${review.flags.map(flag => `<span class="flag-badge">${flag}</span>`).join('')}
+           </div>`
+        : '';
       
       reviewElement.innerHTML = `
         <div class="review-header">
-          <span class="review-author">${review.author}</span>
-          <div class="review-flags">
-            ${review.flags ? review.flags.map(flag => 
-              `<span class="flag-badge">${flag}</span>`
-            ).join('') : ''}
-          </div>
+          <span class="review-author">${review.author || 'Anonymous'}</span>
+          <span class="review-rating">★ ${review.rating || 'N/A'}</span>
         </div>
-        <div class="review-text">${review.text}</div>
+        ${flagsHtml}
+        <div class="review-text">${review.text || 'No review text available'}</div>
         <div class="review-meta">
-          <span>Rating: ${review.rating}/5</span>
-          <span class="review-confidence">Confidence: ${Math.round(review.confidence * 100)}%</span>
+          <span class="suspicious-score">Suspicious Score: ${Math.round((review.suspiciousScore || 0) * 100)}%</span>
+          <span class="review-date">${review.date || 'Unknown date'}</span>
         </div>
       `;
       
@@ -307,145 +393,291 @@ class PopupManager {
   }
 
   renderAuthenticSummary(reviews) {
+    console.log('Rendering authentic summary for:', reviews.length, 'reviews');
+    const container = this.elements.summaryList;
+    container.innerHTML = '';
+
+    if (!reviews || reviews.length === 0) {
+      container.innerHTML = '<p class="no-reviews">No authentic reviews to analyze</p>';
+      return;
+    }
+
+    const summary = this.generateAuthenticSummary(reviews);
+    
+    const summaryHtml = `
+      <div class="summary-stats">
+        <h4>📊 Overview</h4>
+        <ul>
+          <li>Total authentic reviews: ${reviews.length}</li>
+          <li>Positive reviews: ${summary.sentimentCounts.positive}</li>
+          <li>Negative reviews: ${summary.sentimentCounts.negative}</li>
+          <li>Neutral reviews: ${summary.sentimentCounts.neutral}</li>
+        </ul>
+      </div>
+      
+      <div class="summary-insights">
+        <h4>💡 Key Insights</h4>
+        <ul>
+          ${summary.insights.map(insight => `<li>${insight}</li>`).join('')}
+        </ul>
+      </div>
+      
+      <div class="summary-themes">
+        <h4>🏷️ Common Themes</h4>
+        <ul>
+          ${summary.commonThemes.map(theme => `<li>${theme}</li>`).join('')}
+        </ul>
+      </div>
+      
+      <div class="summary-highlights">
+        <h4>⭐ Review Highlights</h4>
+        <div class="highlight-reviews">
+          ${summary.highlightReviews.map(review => `
+            <div class="highlight-review">
+              <div class="highlight-header">
+                <span class="sentiment-badge ${review.sentiment}">${review.sentiment}</span>
+                <span class="rating">★ ${review.rating}</span>
+              </div>
+              <p>"${review.text.substring(0, 150)}${review.text.length > 150 ? '...' : ''}"</p>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    
+    container.innerHTML = summaryHtml;
+  }
+
+  renderAuthenticSummaryInReviews(reviews) {
+    // Fallback method if summary section doesn't exist
     const container = this.elements.reviewsList;
     container.innerHTML = '';
 
-    // Generate summary
-    const summary = this.generateSummary(reviews);
+    if (!reviews || reviews.length === 0) {
+      container.innerHTML = '<p class="no-reviews">No authentic reviews to analyze</p>';
+      return;
+    }
+
+    const summary = this.generateAuthenticSummary(reviews);
     
     const summaryElement = document.createElement('div');
     summaryElement.className = 'authentic-summary';
     summaryElement.innerHTML = `
-      <div class="summary-title">Key Insights from Authentic Reviews</div>
-      <ul class="summary-points">
-        ${summary.points.map(point => `<li>${point}</li>`).join('')}
-      </ul>
+      <div class="summary-section">
+        <h4>📊 Overview</h4>
+        <p>Total authentic reviews: ${reviews.length}</p>
+        <p>Positive: ${summary.sentimentCounts.positive} | Negative: ${summary.sentimentCounts.negative} | Neutral: ${summary.sentimentCounts.neutral}</p>
+      </div>
+      
+      <div class="summary-section">
+        <h4>💡 Key Insights</h4>
+        <ul>
+          ${summary.insights.map(insight => `<li>${insight}</li>`).join('')}
+        </ul>
+      </div>
+      
+      <div class="summary-section">
+        <h4>🏷️ Common Themes</h4>
+        <ul>
+          ${summary.commonThemes.map(theme => `<li>${theme}</li>`).join('')}
+        </ul>
+      </div>
     `;
     
     container.appendChild(summaryElement);
-
-    // Show top authentic reviews
-    const topReviews = reviews
-      .filter(r => r.text.length > 50)
-      .sort((a, b) => b.confidence - a.confidence)
-      .slice(0, 5);
-
-    topReviews.forEach(review => {
-      const reviewElement = document.createElement('div');
-      reviewElement.className = 'review-item';
-      
-      reviewElement.innerHTML = `
-        <div class="review-header">
-          <span class="review-author">${review.author}</span>
-          <span class="sentiment-badge ${review.sentiment}">${review.sentiment}</span>
-        </div>
-        <div class="review-text">${review.text}</div>
-        <div class="review-meta">
-          <span>Rating: ${review.rating}/5</span>
-          <span class="review-confidence">Confidence: ${Math.round(review.confidence * 100)}%</span>
-        </div>
-      `;
-      
-      container.appendChild(reviewElement);
-    });
   }
 
-  generateSummary(reviews) {
-    const points = [];
-    const positiveReviews = reviews.filter(r => r.sentiment === 'positive');
-    const negativeReviews = reviews.filter(r => r.sentiment === 'negative');
+  generateAuthenticSummary(reviews) {
+    console.log('Generating summary for reviews:', reviews.length);
     
-    // Analyze common themes
-    const commonWords = this.extractCommonWords(reviews);
-    const qualityMentions = reviews.filter(r => 
-      r.text.toLowerCase().includes('quality') || 
-      r.text.toLowerCase().includes('build') ||
-      r.text.toLowerCase().includes('material')
-    );
+    // Count sentiments
+    const sentimentCounts = {
+      positive: reviews.filter(r => r.sentiment === 'positive').length,
+      negative: reviews.filter(r => r.sentiment === 'negative').length,
+      neutral: reviews.filter(r => r.sentiment === 'neutral').length
+    };
     
-    const serviceMentions = reviews.filter(r => 
-      r.text.toLowerCase().includes('service') || 
-      r.text.toLowerCase().includes('support') ||
-      r.text.toLowerCase().includes('help')
-    );
-
-    const priceMentions = reviews.filter(r => 
-      r.text.toLowerCase().includes('price') || 
-      r.text.toLowerCase().includes('cost') ||
-      r.text.toLowerCase().includes('value')
-    );
-
-    if (positiveReviews.length > negativeReviews.length) {
-      points.push('Overall positive customer sentiment');
-    } else if (negativeReviews.length > positiveReviews.length) {
-      points.push('Mostly negative customer feedback');
+    // Generate insights
+    const insights = [];
+    const total = reviews.length;
+    
+    if (sentimentCounts.positive > total * 0.7) {
+      insights.push('Overwhelmingly positive customer feedback');
+    } else if (sentimentCounts.negative > total * 0.7) {
+      insights.push('Predominantly negative customer experience');
     } else {
-      points.push('Mixed customer opinions');
+      insights.push('Mixed customer opinions with varied experiences');
     }
-
-    if (qualityMentions.length > 0) {
-      const positiveQuality = qualityMentions.filter(r => r.sentiment === 'positive').length;
-      if (positiveQuality > qualityMentions.length / 2) {
-        points.push('Good product quality mentioned frequently');
-      } else {
-        points.push('Quality concerns raised by customers');
-      }
+    
+    // Analyze review lengths
+    const avgLength = reviews.reduce((sum, r) => sum + r.text.length, 0) / reviews.length;
+    if (avgLength > 200) {
+      insights.push('Customers provide detailed, thoughtful reviews');
+    } else if (avgLength < 50) {
+      insights.push('Most reviews are brief and to the point');
     }
-
-    if (serviceMentions.length > 0) {
-      const positiveService = serviceMentions.filter(r => r.sentiment === 'positive').length;
-      if (positiveService > serviceMentions.length / 2) {
-        points.push('Positive customer service feedback');
-      } else {
-        points.push('Customer service issues reported');
-      }
+    
+    // Analyze ratings
+    const avgRating = reviews.reduce((sum, r) => sum + (r.rating || 3), 0) / reviews.length;
+    if (avgRating > 4) {
+      insights.push(`High average rating of ${avgRating.toFixed(1)}/5 stars`);
+    } else if (avgRating < 2.5) {
+      insights.push(`Low average rating of ${avgRating.toFixed(1)}/5 stars`);
     }
-
-    if (priceMentions.length > 0) {
-      const positivePrice = priceMentions.filter(r => r.sentiment === 'positive').length;
-      if (positivePrice > priceMentions.length / 2) {
-        points.push('Good value for money according to customers');
-      } else {
-        points.push('Price concerns mentioned by customers');
-      }
-    }
-
-    // Add common positive/negative themes
-    if (commonWords.length > 0) {
-      points.push(`Common topics: ${commonWords.slice(0, 3).join(', ')}`);
-    }
-
-    return { points };
+    
+    // Extract common themes
+    const commonThemes = this.extractCommonThemes(reviews);
+    
+    // Get highlight reviews
+    const highlightReviews = this.getHighlightReviews(reviews);
+    
+    return {
+      sentimentCounts,
+      insights,
+      commonThemes,
+      highlightReviews
+    };
   }
 
-  extractCommonWords(reviews) {
-    const words = {};
-    const stopWords = ['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'can', 'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'a', 'an'];
+  extractCommonThemes(reviews) {
+    const themes = [];
+    const allText = reviews.map(r => r.text.toLowerCase()).join(' ');
     
-    reviews.forEach(review => {
-      const text = review.text.toLowerCase();
-      const wordList = text.match(/\b\w+\b/g) || [];
+    // Quality-related keywords
+    const qualityKeywords = ['quality', 'build', 'material', 'construction', 'durable', 'sturdy', 'solid'];
+    const qualityMentions = qualityKeywords.filter(keyword => allText.includes(keyword));
+    if (qualityMentions.length > 0) {
+      const positiveQuality = reviews.filter(r => 
+        r.sentiment === 'positive' && qualityKeywords.some(k => r.text.toLowerCase().includes(k))
+      ).length;
+      const negativeQuality = reviews.filter(r => 
+        r.sentiment === 'negative' && qualityKeywords.some(k => r.text.toLowerCase().includes(k))
+      ).length;
       
-      wordList.forEach(word => {
-        if (word.length > 3 && !stopWords.includes(word)) {
-          words[word] = (words[word] || 0) + 1;
-        }
-      });
-    });
+      if (positiveQuality > negativeQuality) {
+        themes.push('✅ Good build quality and materials');
+      } else {
+        themes.push('❌ Quality concerns mentioned');
+      }
+    }
+    
+    // Price/Value keywords
+    const priceKeywords = ['price', 'cost', 'value', 'money', 'expensive', 'cheap', 'affordable'];
+    const priceMentions = priceKeywords.filter(keyword => allText.includes(keyword));
+    if (priceMentions.length > 0) {
+      const positivePrice = reviews.filter(r => 
+        r.sentiment === 'positive' && priceKeywords.some(k => r.text.toLowerCase().includes(k))
+      ).length;
+      const negativePrice = reviews.filter(r => 
+        r.sentiment === 'negative' && priceKeywords.some(k => r.text.toLowerCase().includes(k))
+      ).length;
+      
+      if (positivePrice > negativePrice) {
+        themes.push('💰 Good value for money');
+      } else {
+        themes.push('💸 Price concerns raised');
+      }
+    }
+    
+    // Service keywords
+    const serviceKeywords = ['service', 'support', 'help', 'staff', 'customer service'];
+    const serviceMentions = serviceKeywords.filter(keyword => allText.includes(keyword));
+    if (serviceMentions.length > 0) {
+      const positiveService = reviews.filter(r => 
+        r.sentiment === 'positive' && serviceKeywords.some(k => r.text.toLowerCase().includes(k))
+      ).length;
+      const negativeService = reviews.filter(r => 
+        r.sentiment === 'negative' && serviceKeywords.some(k => r.text.toLowerCase().includes(k))
+      ).length;
+      
+      if (positiveService > negativeService) {
+        themes.push('🤝 Excellent customer service');
+      } else {
+        themes.push('😤 Customer service issues');
+      }
+    }
+    
+    // Delivery/Shipping keywords
+    const deliveryKeywords = ['delivery', 'shipping', 'fast', 'quick', 'slow', 'delayed'];
+    const deliveryMentions = deliveryKeywords.filter(keyword => allText.includes(keyword));
+    if (deliveryMentions.length > 0) {
+      const positiveDelivery = reviews.filter(r => 
+        r.sentiment === 'positive' && deliveryKeywords.some(k => r.text.toLowerCase().includes(k))
+      ).length;
+      const negativeDelivery = reviews.filter(r => 
+        r.sentiment === 'negative' && deliveryKeywords.some(k => r.text.toLowerCase().includes(k))
+      ).length;
+      
+      if (positiveDelivery > negativeDelivery) {
+        themes.push('🚚 Fast and reliable delivery');
+      } else {
+        themes.push('📦 Delivery issues reported');
+      }
+    }
+    
+    // Add generic themes if no specific ones found
+    if (themes.length === 0) {
+      const positiveReviews = reviews.filter(r => r.sentiment === 'positive');
+      const negativeReviews = reviews.filter(r => r.sentiment === 'negative');
+      
+      if (positiveReviews.length > negativeReviews.length) {
+        themes.push('✅ Generally positive customer experience');
+      } else if (negativeReviews.length > positiveReviews.length) {
+        themes.push('❌ Mixed to negative customer feedback');
+      } else {
+        themes.push('🤷 Varied customer experiences');
+      }
+    }
+    
+    return themes;
+  }
 
-    return Object.entries(words)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
-      .map(([word]) => word);
+  getHighlightReviews(reviews) {
+    // Get a mix of positive and negative reviews that are informative
+    const positiveReviews = reviews.filter(r => r.sentiment === 'positive' && r.text.length > 50);
+    const negativeReviews = reviews.filter(r => r.sentiment === 'negative' && r.text.length > 50);
+    
+    // Sort by confidence and length
+    positiveReviews.sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
+    negativeReviews.sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
+    
+    const highlights = [];
+    
+    // Add top positive reviews
+    if (positiveReviews.length > 0) {
+      highlights.push(...positiveReviews.slice(0, 2));
+    }
+    
+    // Add top negative reviews
+    if (negativeReviews.length > 0) {
+      highlights.push(...negativeReviews.slice(0, 1));
+    }
+    
+    return highlights;
   }
 
   showMainView() {
     this.elements.content.style.display = 'block';
     this.elements.reviewsSection.style.display = 'none';
+    if (this.elements.summarySection) {
+      this.elements.summarySection.style.display = 'none';
+    }
   }
 }
 
 // Initialize popup when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+  console.log('DOM Content Loaded - Initializing PopupManager');
   new PopupManager();
 });
+
+// Fallback initialization
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('Fallback DOM initialization');
+    new PopupManager();
+  });
+} else {
+  console.log('DOM already loaded - Initializing PopupManager immediately');
+  new PopupManager();
+}

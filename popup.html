@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Review Detector</title>
+  <title>CapSniffer</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
@@ -14,14 +14,14 @@
           <path d="M9 12l2 2 4-4"></path>
           <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"></path>
         </svg>
-        <h1>AI Review Detector</h1>
+        <h1>CapSniffer</h1>
       </div>
       <button class="close-btn" id="closeBtn">×</button>
     </div>
 
     <div class="loading" id="loading">
       <div class="spinner"></div>
-      <p>Analyzing reviews with AI...</p>
+      <p>Analyzing reviews...</p>
     </div>
 
     <div class="content" id="content" style="display: none;">
@@ -111,6 +111,15 @@
         <div class="reviews-list" id="reviewsList"></div>
       </div>
     </div>
+
+    <div class="summary-section" id="summarySection" style="display: none;">
+  <div class="reviews-header">
+    <h3 id="summaryTitle">Authentic Review Summary</h3>
+    <button class="back-btn" id="summaryBackBtn">← Back</button>
+  </div>
+  <div class="summary-list" id="summaryList"></div>
+</div>
+
 
     <div class="error" id="error" style="display: none;">
       <div class="error-icon">⚠️</div>

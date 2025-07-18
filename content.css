@@ -17,4 +17,5 @@
   font-size: 10px !important;
   font-weight: bold !important;
   z-index: 1000 !important;
+  pointer-events: none !important;
 }

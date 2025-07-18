@@ -315,6 +315,14 @@ body {
   background: #dcfce7;
 }
 
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f3f4f6 !important;
+  color: #9ca3af !important;
+  border-color: #e5e7eb !important;
+}
+
 .btn-icon {
   width: 16px;
   height: 16px;
@@ -454,6 +462,36 @@ body {
   position: absolute;
   left: 0;
   color: #16a34a;
+}
+
+.sentiment-badge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.sentiment-badge.positive {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.sentiment-badge.negative {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.sentiment-badge.neutral {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.no-reviews {
+  text-align: center;
+  padding: 20px;
+  color: #6b7280;
+  font-style: italic;
 }
 
 .error {

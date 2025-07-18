@@ -1,4 +1,4 @@
-# AI Review Detector Chrome Extension
+# CapSniffer Chrome Extension
 
 A sophisticated Chrome extension that uses AI to detect fake reviews and analyze authentic ones to help users make informed purchase decisions.
 
@@ -26,14 +26,10 @@ A sophisticated Chrome extension that uses AI to detect fake reviews and analyze
 ## Installation
 
 1. Download or clone this repository
-2. Add your custom icon files to the `icons/` directory:
-   - `icon16.png` (16x16 pixels)
-   - `icon48.png` (48x48 pixels)
-   - `icon128.png` (128x128 pixels)
-3. Open Chrome and go to `chrome://extensions/`
-4. Enable "Developer mode" in the top right
-5. Click "Load unpacked" and select the extension folder
-6. The extension icon will appear in your browser toolbar
+2. Open Chrome and go to `chrome://extensions/`
+3. Enable "Developer mode" in the top right
+4. Click "Load unpacked" and select the extension folder
+5. The extension icon will appear in your browser toolbar
 
 ## Usage
 
@@ -41,8 +37,7 @@ A sophisticated Chrome extension that uses AI to detect fake reviews and analyze
 2. Click the AI Review Detector icon in your browser toolbar
 3. The extension will automatically analyze reviews on the page
 4. View the analysis summary with purchase recommendations
-5. Click "See Suspicious Reviews" to view flagged reviews with reasons
-6. Click "See Authentic Summary" to view insights from genuine reviews
+5. Note: "See Suspicious Reviews" and "See Authentic Summary" buttons are currently disabled and will only be modified and used in the future.
 
 ## Technical Details
 
@@ -70,14 +65,6 @@ A sophisticated Chrome extension that uses AI to detect fake reviews and analyze
 - Edge (Chromium-based)
 - Brave
 - Other Chromium-based browsers
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
 
 ## License
 
