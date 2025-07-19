@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Review Detector</title>
+  <title>CapSniffer</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
@@ -14,14 +14,14 @@
           <path d="M9 12l2 2 4-4"></path>
           <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"></path>
         </svg>
-        <h1>AI Review Detector</h1>
+        <h1>CapSniffer</h1>
       </div>
       <button class="close-btn" id="closeBtn">×</button>
     </div>
 
     <div class="loading" id="loading">
       <div class="spinner"></div>
-      <p>Analyzing reviews with AI...</p>
+      <p>Analyzing reviews...</p>
     </div>
 
     <div class="content" id="content" style="display: none;">
@@ -33,15 +33,15 @@
             <span class="stat-label">Total Reviews</span>
           </div>
           <div class="stat-item">
-            <span class="stat-value" id="authenticReviews">0</span>
+            <span class="stat-value authentic-color" id="authenticReviews">0</span>
             <span class="stat-label">Authentic</span>
           </div>
           <div class="stat-item">
-            <span class="stat-value fake" id="suspiciousReviews">0</span>
+            <span class="stat-value suspicious-color" id="suspiciousReviews">0</span>
             <span class="stat-label">Suspicious</span>
           </div>
           <div class="stat-item">
-            <span class="stat-value" id="fakePercentage">0%</span>
+            <span class="stat-value warning-color" id="fakePercentage">0%</span>
             <span class="stat-label">Fake Rate</span>
           </div>
         </div>
@@ -50,9 +50,11 @@
       <div class="recommendation-card" id="recommendationCard">
         <div class="recommendation-header">
           <div class="recommendation-icon" id="recommendationIcon"></div>
-          <h3 id="recommendationTitle">Analyzing...</h3>
+          <div class="recommendation-text">
+            <h3 id="recommendationTitle">Analyzing...</h3>
+            <p id="recommendationReason">Please wait while we analyze the reviews...</p>
+          </div>
         </div>
-        <p id="recommendationReason">Please wait while we analyze the reviews...</p>
         <div class="confidence-meter">
           <div class="confidence-label">Confidence: <span id="confidenceValue">0%</span></div>
           <div class="confidence-bar">
@@ -65,22 +67,31 @@
         <h3>Authentic Reviews Sentiment</h3>
         <div class="sentiment-breakdown">
           <div class="sentiment-item positive">
-            <div class="sentiment-bar">
-              <div class="sentiment-fill" id="positiveFill"></div>
+            <div class="sentiment-info">
+              <span class="sentiment-label">Positive</span>
+              <span class="sentiment-count" id="positiveCount">0</span>
             </div>
-            <span class="sentiment-label">Positive (<span id="positiveCount">0</span>)</span>
+            <div class="sentiment-bar">
+              <div class="sentiment-fill positive-fill" id="positiveFill"></div>
+            </div>
           </div>
           <div class="sentiment-item negative">
-            <div class="sentiment-bar">
-              <div class="sentiment-fill" id="negativeFill"></div>
+            <div class="sentiment-info">
+              <span class="sentiment-label">Negative</span>
+              <span class="sentiment-count" id="negativeCount">0</span>
             </div>
-            <span class="sentiment-label">Negative (<span id="negativeCount">0</span>)</span>
+            <div class="sentiment-bar">
+              <div class="sentiment-fill negative-fill" id="negativeFill"></div>
+            </div>
           </div>
           <div class="sentiment-item neutral">
-            <div class="sentiment-bar">
-              <div class="sentiment-fill" id="neutralFill"></div>
+            <div class="sentiment-info">
+              <span class="sentiment-label">Neutral</span>
+              <span class="sentiment-count" id="neutralCount">0</span>
             </div>
-            <span class="sentiment-label">Neutral (<span id="neutralCount">0</span>)</span>
+            <div class="sentiment-bar">
+              <div class="sentiment-fill neutral-fill" id="neutralFill"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -92,14 +103,14 @@
             <line x1="12" y1="9" x2="12" y2="13"></line>
             <line x1="12" y1="17" x2="12.01" y2="17"></line>
           </svg>
-          See Suspicious Reviews
+          <span>Suspicious Reviews</span>
         </button>
         <button class="action-btn authentic" id="showAuthenticBtn">
           <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M9 12l2 2 4-4"></path>
             <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"></path>
           </svg>
-          See Authentic Summary
+          <span>Authentic Summary</span>
         </button>
       </div>
 
@@ -110,6 +121,14 @@
         </div>
         <div class="reviews-list" id="reviewsList"></div>
       </div>
+    </div>
+
+    <div class="summary-section" id="summarySection" style="display: none;">
+      <div class="reviews-header">
+        <h3 id="summaryTitle">Authentic Review Summary</h3>
+        <button class="back-btn" id="summaryBackBtn">← Back</button>
+      </div>
+      <div class="summary-list" id="summaryList"></div>
     </div>
 
     <div class="error" id="error" style="display: none;">
