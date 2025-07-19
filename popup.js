@@ -59,14 +59,6 @@ class PopupManager {
       summaryBackBtn: document.getElementById('summaryBackBtn')
     };
     
-    // Log which elements were found
-    console.log('Elements found:', {
-      showSuspiciousBtn: !!this.elements.showSuspiciousBtn,
-      showAuthenticBtn: !!this.elements.showAuthenticBtn,
-      backBtn: !!this.elements.backBtn,
-      summarySection: !!this.elements.summarySection,
-      summaryBackBtn: !!this.elements.summaryBackBtn
-    });
   }
 
   bindEvents() {
@@ -95,11 +87,11 @@ class PopupManager {
       });
     }
 
-    // Suspicious reviews button
-    this.elements.showSuspiciousBtn.addEventListener('click', () => {
-      console.log('Suspicious button clicked');
-      this.showSuspiciousReviews();
-    });
+    // Suspicious reviews button (currently disabled)
+    // this.elements.showSuspiciousBtn.addEventListener('click', () => {
+    //   console.log('Suspicious button clicked');
+    //   this.showSuspiciousReviews();
+    // });
 
     // Authentic summary button
     this.elements.showAuthenticBtn.addEventListener('click', () => {
@@ -264,8 +256,15 @@ class PopupManager {
     this.elements.confidenceValue.textContent = data.overallConfidence + '%';
     this.elements.confidenceFill.style.width = data.overallConfidence + '%';
 
+        // Update button states - suspicious button is always disabled but shows red if suspicious reviews exist
+    this.elements.showSuspiciousBtn.disabled = true;
+    if (data.suspicious > 0) {
+      this.elements.showSuspiciousBtn.classList.add('has-suspicious');
+    } else {
+      this.elements.showSuspiciousBtn.classList.remove('has-suspicious');
+    }
     // Enable buttons if we have data
-    this.elements.showSuspiciousBtn.disabled = !data.suspiciousReviews || data.suspiciousReviews.length === 0;
+    //this.elements.showSuspiciousBtn.disabled = !data.suspiciousReviews || data.suspiciousReviews.length === 0;
     this.elements.showAuthenticBtn.disabled = !data.authenticReviews || data.authenticReviews.length === 0;
   }
 
@@ -317,31 +316,6 @@ class PopupManager {
 
 // Updated showSuspiciousReviews method with better debugging
 showSuspiciousReviews() {
-  console.log('=== SHOWING SUSPICIOUS REVIEWS ===');
-  console.log('Analysis data:', this.analysisData);
-  console.log('Suspicious reviews data:', this.analysisData?.suspiciousReviews);
-  
-  if (!this.analysisData) {
-    console.error('No analysis data available');
-    alert('No analysis data available. Please refresh the analysis.');
-    return;
-  }
-  
-  if (!this.analysisData.suspiciousReviews) {
-    console.error('No suspicious reviews property in analysis data');
-    console.log('Available properties:', Object.keys(this.analysisData));
-    alert('No suspicious reviews data found. The analysis might not be complete.');
-    return;
-  }
-  
-  if (this.analysisData.suspiciousReviews.length === 0) {
-    console.warn('Suspicious reviews array is empty');
-    alert('No suspicious reviews found in the analysis.');
-    return;
-  }
-  
-  console.log(`Found ${this.analysisData.suspiciousReviews.length} suspicious reviews`);
-  
   // Hide other sections
   this.elements.content.style.display = 'none';
   this.elements.reviewsSection.style.display = 'block';
